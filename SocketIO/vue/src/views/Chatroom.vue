@@ -1,18 +1,24 @@
 <template>
-  <GuestList ref="guestList" @guestClicked="guestClicked" />
-  <div ref="messageWrapper" class="message-wrapper">
-    <Message
-      v-for="msg in messages"
-      :key="msg.sendTime"
-      :guest-id="msg.guestId"
-      :guest-name="msg.guestName"
-      :message="msg.message"
-      :receiverId="msg.receiverId"
-      :receiverName="msg.receiverName"
-      :msg-type="msg.msgType"
+  <div class="chatroom">
+    <GuestList ref="guestList" @guestClicked="guestClicked" />
+    <div ref="messageWrapper" class="message-wrapper">
+      <Message
+        v-for="msg in messages"
+        :key="msg.sendTime"
+        :guest-id="msg.guestId"
+        :guest-name="msg.guestName"
+        :message="msg.message"
+        :receiverId="msg.receiverId"
+        :receiverName="msg.receiverName"
+        :msg-type="msg.msgType"
+      />
+    </div>
+    <InputBox
+      class="inputbox"
+      @submit="onSend"
+      :place-holder="this.$data.guestName"
     />
   </div>
-  <InputBox class="inputbox" @submit="onSend" :place-holder="this.$data.guestName" />
 </template>
 
 <script>
@@ -85,9 +91,11 @@ export default {
       this.$router.push("/");
     } else {
       //建立signalR連線物件
-      model.socket = new signalR.HubConnectionBuilder().withUrl(endpoint.chatHub).build();
+      model.socket = new signalR.HubConnectionBuilder()
+        .withUrl(endpoint.chatHub)
+        .build();
       //註冊server端傳送的訪客清單事件
-      model.socket.on("guestList",function(json){
+      model.socket.on("guestList", function (json) {
         //清空訪客清單
         model.guests.splice(0);
         //重新加入所有訪客
@@ -109,24 +117,25 @@ export default {
         model.messages.push(notice);
       });
       //註冊server端傳送訊息事件
-      model.socket.on("incomming",function(json){
+      model.socket.on("incomming", function (json) {
         model.messages.push(json);
       });
       //開始連線
-      model.socket.start()
+      model.socket
+        .start()
         .then(function () {
           console.log("connecting to websocket...");
           //取得connectionId
           model.guestId = model.socket.connection.connectionId;
           //確保訪客確實斷線
           window.addEventListener("beforeunload", function () {
-            try{
+            try {
               model.socket.stop();
-            } catch(ex) {}
+            } catch (ex) {}
           });
         })
         .catch(function (err) {
-            return console.error(err.toString());
+          return console.error(err.toString());
         });
     }
   },
@@ -138,11 +147,9 @@ export default {
   },
 
   beforeUnmount() {
-    try{
+    try {
       this.$data.socket.stop();
-    } catch(ex) {
-
-    }
+    } catch (ex) {}
   },
   methods: {
     onSend(message) {
@@ -167,12 +174,20 @@ export default {
 </script>
 
 <style scoped>
+.chatroom {
+  position:absolute;
+  top:0px;
+  bottom:0px;
+  width:100%;
+  display: flex;
+  flex-direction:column;
+  justify-content: space-between;
+}
 .message-wrapper {
   margin: 5px;
   width: calc(100% - 10px);
   overflow: auto;
-  height: calc(90vh - 4.75rem - 10px);
-  max-height: calc(90vh - 4.75rem - 10px);
+  flex-grow: 100;
 }
 .inputbox {
   margin: 5px;

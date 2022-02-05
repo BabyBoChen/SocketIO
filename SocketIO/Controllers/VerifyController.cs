@@ -22,7 +22,7 @@ namespace SocketIO.Controllers
             }
             else
             {
-
+                
             }
             var jsonResult = new { isLogin, guestName };
             return Json(jsonResult);

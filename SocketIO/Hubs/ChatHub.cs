@@ -5,15 +5,23 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Collections.Concurrent;
 
 namespace SocketIO.Hubs
 {
     public class ChatHub : Hub
     {
-        public static List<Guest> Users = new List<Guest>()
-        {
-            Guest.All,
-        };
+        //public static List<Guest> Users = new List<Guest>()
+        //{
+        //    Guest.All,
+        //};
+        public static ConcurrentDictionary<string, Guest> Users { get; set; } = new ConcurrentDictionary<string, Guest>
+        (
+            new Dictionary<string, Guest>() 
+            { 
+                {"-", Guest.All }
+            }
+        );
         public static object _lock = new object();
         public override Task OnConnectedAsync()
         {
@@ -23,30 +31,32 @@ namespace SocketIO.Hubs
                                 where c.Type == ClaimTypes.Name
                                 select c).FirstOrDefault()?.Value;
             string notice = $"{guestName} 進入聊天室!";
-            lock (_lock)
-            {
-                Users.Add(new Guest(guestId, guestName));
-            }
+            Guest g = new Guest();
+            g.GuestId = guestId;
+            g.GuestName = guestName;
+            Users[guestId] = g;
             this.RefreshGuestList(notice);
             return Task.CompletedTask;
         }
         public override Task OnDisconnectedAsync(Exception exception)
         {
             string notice = "";
-            lock (_lock)
+            Guest removingGuest = new Guest();
+            if (Users.TryRemove(Context.ConnectionId, out removingGuest))
             {
-                Guest user = (from u in Users
-                              where u.GuestId == Context.ConnectionId
-                              select u).FirstOrDefault();
-                Users.Remove(user);
-                notice = $"{user.GuestName} 離開聊天室!";
+                notice = $"{removingGuest.GuestName} 離開聊天室!";
             }
             this.RefreshGuestList(notice);
             return base.OnDisconnectedAsync(exception);
         }
         public Task RefreshGuestList(string notice)
         {
-            var pa = new { Users, notice };
+            List<Guest> users = new List<Guest>();
+            foreach (var u in Users)
+            {
+                users.Add(u.Value);
+            }
+            var pa = new { users, notice };
             Task t = Clients.All.SendAsync("guestList", pa);
             return t;
         }
