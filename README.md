@@ -4,6 +4,6 @@
 
 網站已上架至微軟的Azure雲端平台。
 
-註：原先採用Python Flask的SocketIO模組撰寫，但因為Python Anywhere平台不支援Web Socket以及該平台的高網路延池，故改採用SignalR技術撰寫。
+註：原先採用Python Flask的SocketIO模組撰寫，但因為Python Anywhere平台不支援Web Socket以及該平台的高網路延遲，故改採用SignalR技術撰寫。
 
 https://bbljchatroom.azurewebsites.net/
